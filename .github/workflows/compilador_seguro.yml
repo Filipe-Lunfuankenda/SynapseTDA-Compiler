@@ -4,9 +4,9 @@ on:
   workflow_dispatch:
     inputs:
       version_tag:
-        description: 'Nome da Versao (ex: v1.0.1)'
+        description: 'Nome da Versao (ex: v1.0.2)'
         required: true
-        default: 'v1.0.1'
+        default: 'v1.0.2'
 
 jobs:
   create_release:
@@ -74,6 +74,9 @@ jobs:
           sudo fallocate -l 8G "$SWAPFILE" || sudo dd if=/dev/zero of="$SWAPFILE" bs=1M count=8192 status=none
           sudo chmod 600 "$SWAPFILE" && sudo mkswap "$SWAPFILE" && sudo swapon "$SWAPFILE" || echo "Swap fallhou"
 
+      - name: Patch PythonCall for PackageCompiler
+        run: julia scratch/patch_pythoncall.jl
+
       - name: Compilar App
         run: julia --project=. scratch/compile.jl
 
@@ -84,6 +87,7 @@ jobs:
           Move-Item SynapseTDA_App\bin SynapseTDA_App\_core_engine\
           Move-Item SynapseTDA_App\lib SynapseTDA_App\_core_engine\
           Move-Item SynapseTDA_App\share SynapseTDA_App\_core_engine\
+          julia scratch/copy_pysrc.jl
           mkdir SynapseTDA_App\data
           mkdir SynapseTDA_App\output
           echo "Coloque todos os seus ficheiros de dados (EEG, ECG, etc) nesta pasta." > SynapseTDA_App\data\_COLOQUE_FICHEIROS_AQUI.txt
@@ -115,6 +119,7 @@ jobs:
           mv SynapseTDA_App/bin SynapseTDA_App/_core_engine/
           mv SynapseTDA_App/lib SynapseTDA_App/_core_engine/
           mv SynapseTDA_App/share SynapseTDA_App/_core_engine/ || true
+          julia scratch/copy_pysrc.jl
           mkdir -p SynapseTDA_App/data
           mkdir -p SynapseTDA_App/output
           echo "Coloque todos os seus ficheiros de dados (EEG, ECG, etc) nesta pasta." > SynapseTDA_App/data/_COLOQUE_FICHEIROS_AQUI.txt
