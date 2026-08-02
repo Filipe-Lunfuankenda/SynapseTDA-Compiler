@@ -86,8 +86,14 @@ jobs:
           Move-Item SynapseTDA_App\share SynapseTDA_App\_core_engine\
           mkdir SynapseTDA_App\data
           mkdir SynapseTDA_App\output
+          echo "Coloque todos os seus ficheiros de dados (EEG, ECG, etc) nesta pasta." > SynapseTDA_App\data\_COLOQUE_FICHEIROS_AQUI.txt
+          echo "Os relatorios finais em HTML irao aparecer nesta pasta." > SynapseTDA_App\output\_RESULTADOS_AQUI.txt
           Copy-Item Project.toml -Destination SynapseTDA_App\_core_engine\share\julia\
           if (Test-Path CondaPkg.toml) { Copy-Item CondaPkg.toml -Destination SynapseTDA_App\_core_engine\share\julia\ }
+          Copy-Item docs\INSTRUCOES_PT.txt -Destination SynapseTDA_App\
+          Copy-Item docs\INSTRUCTIONS_EN.txt -Destination SynapseTDA_App\
+          Copy-Item docs\MANUAL_PT_SynapseTDA.pdf -Destination SynapseTDA_App\
+          Copy-Item docs\MANUAL_EN_SynapseTDA.pdf -Destination SynapseTDA_App\
           Copy-Item Manifest.toml -Destination SynapseTDA_App\_core_engine\share\julia\
           if (Test-Path .CondaPkg) { Copy-Item .CondaPkg -Recurse -Destination SynapseTDA_App\_core_engine\share\julia\ }
           echo '@echo off' > SynapseTDA_App\Executar_SynapseTDA.bat
@@ -96,10 +102,9 @@ jobs:
           echo 'cd /d %~dp0' >> SynapseTDA_App\Executar_SynapseTDA.bat
           echo 'set JULIA_PYTHONCALL_EXE=%~dp0_core_engine\share\julia\.CondaPkg\.pixi\envs\default\python.exe' >> SynapseTDA_App\Executar_SynapseTDA.bat
           echo 'if not exist "%JULIA_PYTHONCALL_EXE%" set JULIA_PYTHONCALL_EXE=%~dp0_core_engine\share\julia\.CondaPkg\env\python.exe' >> SynapseTDA_App\Executar_SynapseTDA.bat
-          echo 'set JULIA_PYTHONCALL_LIB=%~dp0_core_engine\share\julia\.CondaPkg\.pixi\envs\default\python3.dll' >> SynapseTDA_App\Executar_SynapseTDA.bat
-          echo 'if not exist "%JULIA_PYTHONCALL_LIB%" set JULIA_PYTHONCALL_LIB=%~dp0_core_engine\share\julia\.CondaPkg\env\python3.dll' >> SynapseTDA_App\Executar_SynapseTDA.bat
-          echo 'if not exist "%JULIA_PYTHONCALL_LIB%" for %%F in ("%~dp0_core_engine\share\julia\.CondaPkg\.pixi\envs\default\python3*.dll") do set JULIA_PYTHONCALL_LIB=%%F' >> SynapseTDA_App\Executar_SynapseTDA.bat
-          echo 'if not exist "%JULIA_PYTHONCALL_LIB%" for %%F in ("%~dp0_core_engine\share\julia\.CondaPkg\env\python3*.dll") do set JULIA_PYTHONCALL_LIB=%%F' >> SynapseTDA_App\Executar_SynapseTDA.bat
+          echo 'set JULIA_PYTHONCALL_LIB=' >> SynapseTDA_App\Executar_SynapseTDA.bat
+          echo 'for %%F in ("%~dp0_core_engine\share\julia\.CondaPkg\.pixi\envs\default\python31*.dll") do set JULIA_PYTHONCALL_LIB=%%F' >> SynapseTDA_App\Executar_SynapseTDA.bat
+          echo 'if "%JULIA_PYTHONCALL_LIB%"=="" for %%F in ("%~dp0_core_engine\share\julia\.CondaPkg\env\python31*.dll") do set JULIA_PYTHONCALL_LIB=%%F' >> SynapseTDA_App\Executar_SynapseTDA.bat
           echo '"_core_engine\bin\SynapseTDA.exe"' >> SynapseTDA_App\Executar_SynapseTDA.bat
           7z a -sfx SynapseTDA-Windows-Installer.exe .\SynapseTDA_App
 
@@ -112,9 +117,15 @@ jobs:
           mv SynapseTDA_App/share SynapseTDA_App/_core_engine/ || true
           mkdir -p SynapseTDA_App/data
           mkdir -p SynapseTDA_App/output
+          echo "Coloque todos os seus ficheiros de dados (EEG, ECG, etc) nesta pasta." > SynapseTDA_App/data/_COLOQUE_FICHEIROS_AQUI.txt
+          echo "Os relatorios finais em HTML irao aparecer nesta pasta." > SynapseTDA_App/output/_RESULTADOS_AQUI.txt
           cp Project.toml SynapseTDA_App/_core_engine/share/julia/
           cp CondaPkg.toml SynapseTDA_App/_core_engine/share/julia/ || true
           cp Manifest.toml SynapseTDA_App/_core_engine/share/julia/ || true
+          cp docs/INSTRUCOES_PT.txt SynapseTDA_App/
+          cp docs/INSTRUCTIONS_EN.txt SynapseTDA_App/
+          cp docs/MANUAL_PT_SynapseTDA.pdf SynapseTDA_App/
+          cp docs/MANUAL_EN_SynapseTDA.pdf SynapseTDA_App/
           cp -r .CondaPkg SynapseTDA_App/_core_engine/share/julia/ || true
           echo '#!/bin/bash' > SynapseTDA_App/Executar_SynapseTDA.sh
           echo 'cd "$(dirname "$0")"' >> SynapseTDA_App/Executar_SynapseTDA.sh
