@@ -96,6 +96,10 @@ jobs:
           echo 'cd /d %~dp0' >> SynapseTDA_App\Executar_SynapseTDA.bat
           echo 'set JULIA_PYTHONCALL_EXE=%~dp0_core_engine\share\julia\.CondaPkg\.pixi\envs\default\python.exe' >> SynapseTDA_App\Executar_SynapseTDA.bat
           echo 'if not exist "%JULIA_PYTHONCALL_EXE%" set JULIA_PYTHONCALL_EXE=%~dp0_core_engine\share\julia\.CondaPkg\env\python.exe' >> SynapseTDA_App\Executar_SynapseTDA.bat
+          echo 'set JULIA_PYTHONCALL_LIB=%~dp0_core_engine\share\julia\.CondaPkg\.pixi\envs\default\python3.dll' >> SynapseTDA_App\Executar_SynapseTDA.bat
+          echo 'if not exist "%JULIA_PYTHONCALL_LIB%" set JULIA_PYTHONCALL_LIB=%~dp0_core_engine\share\julia\.CondaPkg\env\python3.dll' >> SynapseTDA_App\Executar_SynapseTDA.bat
+          echo 'if not exist "%JULIA_PYTHONCALL_LIB%" for %%F in ("%~dp0_core_engine\share\julia\.CondaPkg\.pixi\envs\default\python3*.dll") do set JULIA_PYTHONCALL_LIB=%%F' >> SynapseTDA_App\Executar_SynapseTDA.bat
+          echo 'if not exist "%JULIA_PYTHONCALL_LIB%" for %%F in ("%~dp0_core_engine\share\julia\.CondaPkg\env\python3*.dll") do set JULIA_PYTHONCALL_LIB=%%F' >> SynapseTDA_App\Executar_SynapseTDA.bat
           echo '"_core_engine\bin\SynapseTDA.exe"' >> SynapseTDA_App\Executar_SynapseTDA.bat
           7z a -sfx SynapseTDA-Windows-Installer.exe .\SynapseTDA_App
 
@@ -119,6 +123,13 @@ jobs:
           echo '  PYTHON_PATH="$(pwd)/_core_engine/share/julia/.CondaPkg/env/bin/python"' >> SynapseTDA_App/Executar_SynapseTDA.sh
           echo 'fi' >> SynapseTDA_App/Executar_SynapseTDA.sh
           echo 'export JULIA_PYTHONCALL_EXE="$PYTHON_PATH"' >> SynapseTDA_App/Executar_SynapseTDA.sh
+          echo 'LIB_PATHS=('$(pwd)'/_core_engine/share/julia/.CondaPkg/.pixi/envs/default/lib/libpython3.* '$(pwd)'/_core_engine/share/julia/.CondaPkg/env/lib/libpython3.*)' >> SynapseTDA_App/Executar_SynapseTDA.sh
+          echo 'for p in ${LIB_PATHS[@]}; do' >> SynapseTDA_App/Executar_SynapseTDA.sh
+          echo '  if [[ "$p" == *.so ]] || [[ "$p" == *.so.* ]] || [[ "$p" == *.dylib ]]; then' >> SynapseTDA_App/Executar_SynapseTDA.sh
+          echo '    export JULIA_PYTHONCALL_LIB="$p"' >> SynapseTDA_App/Executar_SynapseTDA.sh
+          echo '    break' >> SynapseTDA_App/Executar_SynapseTDA.sh
+          echo '  fi' >> SynapseTDA_App/Executar_SynapseTDA.sh
+          echo 'done' >> SynapseTDA_App/Executar_SynapseTDA.sh
           echo 'echo "Iniciando Motor Topologico SynapseTDA..."' >> SynapseTDA_App/Executar_SynapseTDA.sh
           echo './_core_engine/bin/SynapseTDA' >> SynapseTDA_App/Executar_SynapseTDA.sh
           chmod +x SynapseTDA_App/Executar_SynapseTDA.sh
