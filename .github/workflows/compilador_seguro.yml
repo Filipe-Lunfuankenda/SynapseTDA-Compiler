@@ -1,0 +1,139 @@
+name: Fábrica Cega (Compilador Multi-OS)
+
+on:
+  workflow_dispatch:
+    inputs:
+      version_tag:
+        description: 'Nome da Versao (ex: v1.0.1)'
+        required: true
+        default: 'v1.0.1'
+
+jobs:
+  create_release:
+    name: Preparar Lançamento no Repo Privado
+    runs-on: ubuntu-latest
+    steps:
+      - name: Criar Release Segura
+        env:
+          GH_TOKEN: ${{ secrets.PAT_TOKEN }}
+        run: |
+          gh release create ${{ github.event.inputs.version_tag }} --repo Filipe-Lunfuankenda/analise-topologica-sinais-cerebrais --title "Versão ${{ github.event.inputs.version_tag }}" --notes "Compilados de forma segura via Fábrica Cega." || echo "Release já existe"
+
+  build:
+    needs: create_release
+    name: Build on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, ubuntu-latest, macos-latest]
+    
+    steps:
+      - name: Clonar Repositório PRIVADO em Segredo
+        uses: actions/checkout@v4
+        with:
+          repository: Filipe-Lunfuankenda/analise-topologica-sinais-cerebrais
+          token: ${{ secrets.PAT_TOKEN }}
+          
+      - name: Setup Julia
+        uses: julia-actions/setup-julia@v2
+        with:
+          version: '1.11.0'
+          
+      - name: Free Disk Space (Ubuntu)
+        if: runner.os == 'Linux'
+        uses: jlumbroso/free-disk-space@main
+        with:
+          tool-cache: false
+          android: true
+          dotnet: true
+          haskell: true
+          large-packages: true
+          docker-images: true
+          swap-storage: false
+          
+      - name: Cache Julia Packages
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.julia/artifacts
+            ~/.julia/compiled
+            ~/.julia/packages
+            .CondaPkg
+          key: ${{ runner.os }}-julia-cache-${{ hashFiles('**/Project.toml', '**/Manifest.toml', '**/CondaPkg.toml') }}
+          restore-keys: |
+            ${{ runner.os }}-julia-cache-
+
+      - name: Construir Ambiente de Dependências
+        run: julia --project=. -e 'using Pkg; Pkg.instantiate(); using CondaPkg; CondaPkg.resolve()'
+        
+      - name: Allocate Swap Space (Ubuntu OOM Fix)
+        if: runner.os == 'Linux'
+        run: |
+          SWAPFILE="/mnt/swapfile"
+          sudo fallocate -l 8G "$SWAPFILE" || sudo dd if=/dev/zero of="$SWAPFILE" bs=1M count=8192 status=none
+          sudo chmod 600 "$SWAPFILE" && sudo mkswap "$SWAPFILE" && sudo swapon "$SWAPFILE" || echo "Swap fallhou"
+
+      - name: Compilar App
+        run: julia --project=. scratch/compile.jl
+
+      - name: Package Windows
+        if: runner.os == 'Windows'
+        run: |
+          mkdir SynapseTDA_App\_core_engine
+          Move-Item SynapseTDA_App\bin SynapseTDA_App\_core_engine\
+          Move-Item SynapseTDA_App\lib SynapseTDA_App\_core_engine\
+          Move-Item SynapseTDA_App\share SynapseTDA_App\_core_engine\
+          mkdir SynapseTDA_App\data
+          mkdir SynapseTDA_App\output
+          Copy-Item Project.toml -Destination SynapseTDA_App\_core_engine\share\julia\
+          if (Test-Path CondaPkg.toml) { Copy-Item CondaPkg.toml -Destination SynapseTDA_App\_core_engine\share\julia\ }
+          Copy-Item Manifest.toml -Destination SynapseTDA_App\_core_engine\share\julia\
+          if (Test-Path .CondaPkg) { Copy-Item .CondaPkg -Recurse -Destination SynapseTDA_App\_core_engine\share\julia\ }
+          echo '@echo off' > SynapseTDA_App\Executar_SynapseTDA.bat
+          echo 'title SynapseTDA' >> SynapseTDA_App\Executar_SynapseTDA.bat
+          echo 'echo Iniciando Motor Topologico SynapseTDA...' >> SynapseTDA_App\Executar_SynapseTDA.bat
+          echo 'cd /d %~dp0' >> SynapseTDA_App\Executar_SynapseTDA.bat
+          echo 'set JULIA_PYTHONCALL_EXE=%~dp0_core_engine\share\julia\.CondaPkg\.pixi\envs\default\python.exe' >> SynapseTDA_App\Executar_SynapseTDA.bat
+          echo 'if not exist "%JULIA_PYTHONCALL_EXE%" set JULIA_PYTHONCALL_EXE=%~dp0_core_engine\share\julia\.CondaPkg\env\python.exe' >> SynapseTDA_App\Executar_SynapseTDA.bat
+          echo '"_core_engine\bin\SynapseTDA.exe"' >> SynapseTDA_App\Executar_SynapseTDA.bat
+          7z a -sfx SynapseTDA-Windows-Installer.exe .\SynapseTDA_App
+
+      - name: Package Linux/macOS
+        if: runner.os != 'Windows'
+        run: |
+          mkdir -p SynapseTDA_App/_core_engine
+          mv SynapseTDA_App/bin SynapseTDA_App/_core_engine/
+          mv SynapseTDA_App/lib SynapseTDA_App/_core_engine/
+          mv SynapseTDA_App/share SynapseTDA_App/_core_engine/ || true
+          mkdir -p SynapseTDA_App/data
+          mkdir -p SynapseTDA_App/output
+          cp Project.toml SynapseTDA_App/_core_engine/share/julia/
+          cp CondaPkg.toml SynapseTDA_App/_core_engine/share/julia/ || true
+          cp Manifest.toml SynapseTDA_App/_core_engine/share/julia/ || true
+          cp -r .CondaPkg SynapseTDA_App/_core_engine/share/julia/ || true
+          echo '#!/bin/bash' > SynapseTDA_App/Executar_SynapseTDA.sh
+          echo 'cd "$(dirname "$0")"' >> SynapseTDA_App/Executar_SynapseTDA.sh
+          echo 'PYTHON_PATH="$(pwd)/_core_engine/share/julia/.CondaPkg/.pixi/envs/default/bin/python"' >> SynapseTDA_App/Executar_SynapseTDA.sh
+          echo 'if [ ! -f "$PYTHON_PATH" ]; then' >> SynapseTDA_App/Executar_SynapseTDA.sh
+          echo '  PYTHON_PATH="$(pwd)/_core_engine/share/julia/.CondaPkg/env/bin/python"' >> SynapseTDA_App/Executar_SynapseTDA.sh
+          echo 'fi' >> SynapseTDA_App/Executar_SynapseTDA.sh
+          echo 'export JULIA_PYTHONCALL_EXE="$PYTHON_PATH"' >> SynapseTDA_App/Executar_SynapseTDA.sh
+          echo 'echo "Iniciando Motor Topologico SynapseTDA..."' >> SynapseTDA_App/Executar_SynapseTDA.sh
+          echo './_core_engine/bin/SynapseTDA' >> SynapseTDA_App/Executar_SynapseTDA.sh
+          chmod +x SynapseTDA_App/Executar_SynapseTDA.sh
+          cp SynapseTDA_App/Executar_SynapseTDA.sh SynapseTDA_App/Executar_SynapseTDA.command
+          chmod +x SynapseTDA_App/Executar_SynapseTDA.command
+          tar -czf SynapseTDA-${{ runner.os }}.tar.gz SynapseTDA_App
+
+      - name: Enviar Binário para Repo Privado (Windows)
+        if: runner.os == 'Windows'
+        env:
+          GH_TOKEN: ${{ secrets.PAT_TOKEN }}
+        run: gh release upload ${{ github.event.inputs.version_tag }} SynapseTDA-Windows-Installer.exe --repo Filipe-Lunfuankenda/analise-topologica-sinais-cerebrais --clobber
+
+      - name: Enviar Binário para Repo Privado (Linux/macOS)
+        if: runner.os != 'Windows'
+        env:
+          GH_TOKEN: ${{ secrets.PAT_TOKEN }}
+        run: gh release upload ${{ github.event.inputs.version_tag }} SynapseTDA-${{ runner.os }}.tar.gz --repo Filipe-Lunfuankenda/analise-topologica-sinais-cerebrais --clobber
