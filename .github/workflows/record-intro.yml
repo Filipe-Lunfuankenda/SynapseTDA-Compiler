@@ -18,7 +18,7 @@ jobs:
       - name: Checkout Private Repository (Para obter o HTML)
         uses: actions/checkout@v4
         with:
-          repository: 'Filipe-Lunfuankenda/analise-topologica-sinais-cerebrais' # Substitua pelo nome exato do repo privado se necessário
+          repository: 'Filipe-Lunfuankenda/analise-topologica-sinais-cerebrais' # Substitua se necessário
           token: ${{ secrets.PAT_TOKEN }}
           path: 'private_repo'
 
@@ -36,13 +36,13 @@ jobs:
           # Esperar que o ecrã virtual inicie
           sleep 3
           
-          # 2. Iniciar o Google Chrome em modo Kiosk apontando para a pasta privada
-          google-chrome --kiosk --window-size=3840,2160 --no-sandbox --autoplay-policy=no-user-gesture-required "file://$PWD/private_repo/scratch/SynapseTDA_Intro.html" &
+          # 2. Iniciar o Google Chrome em modo Kiosk e CALAR as perguntas de primeira execução
+          google-chrome --kiosk --start-fullscreen --window-size=3840,2160 --no-sandbox --no-first-run --no-default-browser-check --disable-infobars --autoplay-policy=no-user-gesture-required "file://$PWD/private_repo/scratch/SynapseTDA_Intro.html" &
           
           # Esperar que a página carregue e a animação comece
           sleep 2
           
-          # 3. Gravar o ecrã com o FFmpeg (Software Encoding - ultrafast)
+          # 3. Gravar o ecrã com o FFmpeg
           ffmpeg -y -f x11grab -video_size 3840x2160 -framerate 60 -i :99 -c:v libx264 -preset ultrafast -crf 18 -t ${{ github.event.inputs.duration }} SynapseTDA_Intro_4K.mp4
 
       - name: Upload do Vídeo para Download
