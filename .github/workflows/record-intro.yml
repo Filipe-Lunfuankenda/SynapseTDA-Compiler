@@ -34,21 +34,19 @@ jobs:
 
       - name: Renderizar Vídeo Frame-a-Frame (Qualidade Extrema 4K)
         run: |
-          # Instalar a ferramenta de renderização cinemática
           npm install -g timecut
           
-          echo "A renderizar 4K a 60FPS frame-a-frame. Isto pode demorar de 20 a 40 minutos..."
-          # O Timecut pára o tempo no browser e tira uma foto perfeita frame a frame.
-          # Não há lag, não há popups, não há rato. É renderização pura.
+          echo "A renderizar 4K a 60FPS frame-a-frame..."
+          # Adicionámos --disable-dev-shm-usage para impedir o Chrome de esgotar a RAM e rebentar
+          # Adicionámos --disable-gpu para forçar a renderização a CPU limpa
           timecut "file://$PWD/private_repo/scratch/SynapseTDA_Intro.html" \
             --viewport=3840,2160 \
             --fps=60 \
             --duration=${{ github.event.inputs.duration }} \
             --output=SynapseTDA_Intro_4K.mp4 \
-            --puppeteer-launch-args="--no-sandbox,--disable-setuid-sandbox,--disable-translate,--disable-features=TranslateUI" \
+            --puppeteer-launch-args="--no-sandbox,--disable-setuid-sandbox,--disable-dev-shm-usage,--disable-gpu,--disable-translate,--disable-features=TranslateUI" \
             --video-codec=libx264 \
             --video-bitrate=50M
-            # Bitrate de 50M = Qualidade Ultra HD sem compressão visível.
 
       - name: Upload do Vídeo para Download
         uses: actions/upload-artifact@v4
