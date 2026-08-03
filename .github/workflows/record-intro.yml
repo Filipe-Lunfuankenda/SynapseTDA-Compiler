@@ -18,14 +18,14 @@ jobs:
       - name: Checkout Private Repository (Para obter o HTML)
         uses: actions/checkout@v4
         with:
-          repository: 'Filipe-Lunfuankenda/analise-topologica-sinais-cerebrais' # Substitua se necessário
+          repository: 'Filipe-Lunfuankenda/analise-topologica-sinais-cerebrais' # Substitua se necessário pelo nome exato
           token: ${{ secrets.PAT_TOKEN }}
           path: 'private_repo'
 
-      - name: Instalar Dependências (Xvfb, FFmpeg, Chrome)
+      - name: Instalar Dependências (Xvfb, FFmpeg, Chrome, Xdotool)
         run: |
           sudo apt-get update
-          sudo apt-get install -y xvfb ffmpeg google-chrome-stable
+          sudo apt-get install -y xvfb ffmpeg google-chrome-stable xdotool
 
       - name: Gravar Animação 4K a 60 FPS
         run: |
@@ -36,14 +36,25 @@ jobs:
           # Esperar que o ecrã virtual inicie
           sleep 3
           
-          # 2. Iniciar o Google Chrome em modo Kiosk e CALAR as perguntas de primeira execução
-          google-chrome --kiosk --start-fullscreen --window-size=3840,2160 --no-sandbox --no-first-run --no-default-browser-check --disable-infobars --autoplay-policy=no-user-gesture-required "file://$PWD/private_repo/scratch/SynapseTDA_Intro.html" &
+          # Tirar o rato virtual do meio do ecrã por segurança
+          xdotool mousemove 3840 2160
           
-          # Esperar que a página carregue e a animação comece
+          # 2. Iniciar o Google Chrome
+          # --force-device-scale-factor=2.0 -> Resolve o problema de estar "distante". Dá zoom de 200% mantendo a nitidez 4K.
+          # --disable-translate -> Remove a barra do Google Translate.
+          google-chrome --kiosk --start-fullscreen --window-size=3840,2160 --force-device-scale-factor=2.0 --disable-translate --disable-features=TranslateUI --no-sandbox --no-first-run --no-default-browser-check --disable-infobars --autoplay-policy=no-user-gesture-required "file://$PWD/private_repo/scratch/SynapseTDA_Intro.html" &
+          
+          # Esperar que a página carregue
           sleep 2
           
-          # 3. Gravar o ecrã com o FFmpeg
-          ffmpeg -y -f x11grab -video_size 3840x2160 -framerate 60 -i :99 -c:v libx264 -preset ultrafast -crf 18 -t ${{ github.event.inputs.duration }} SynapseTDA_Intro_4K.mp4
+          # 3. Gravar o ecrã em Tempo Real (Fase 1 - Raw/Leve para o CPU não perder frames)
+          # -draw_mouse 0 garante que o ponteiro desaparece do vídeo de vez
+          echo "A gravar a tela em tempo real..."
+          ffmpeg -y -f x11grab -draw_mouse 0 -video_size 3840x2160 -framerate 60 -i :99 -c:v libx264 -preset ultrafast -crf 15 -pix_fmt yuv420p -t ${{ github.event.inputs.duration }} raw_video.mp4
+          
+          # 4. Compressão Máxima Studio-Quality (Fase 2 - Demorado mas com Qualidade de Cinema)
+          echo "A processar o video para qualidade de cinema 4K (isto pode demorar 15 a 30 minutos)..."
+          ffmpeg -y -i raw_video.mp4 -c:v libx264 -preset slower -crf 12 -pix_fmt yuv420p SynapseTDA_Intro_4K.mp4
 
       - name: Upload do Vídeo para Download
         uses: actions/upload-artifact@v4
