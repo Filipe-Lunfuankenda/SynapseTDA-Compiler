@@ -1,0 +1,52 @@
+name: Record 4K Intro Video
+
+on:
+  workflow_dispatch:
+    inputs:
+      duration:
+        description: 'Duração da gravação em segundos (ex: 60)'
+        required: true
+        default: '60'
+
+jobs:
+  record-video:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Public Repository
+        uses: actions/checkout@v4
+
+      - name: Checkout Private Repository (Para obter o HTML)
+        uses: actions/checkout@v4
+        with:
+          repository: 'Filipe-Lunfuankenda/analise-topologica-sinais-cerebrais' # Substitua pelo nome exato do repo privado se necessário
+          token: ${{ secrets.PAT_TOKEN }}
+          path: 'private_repo'
+
+      - name: Instalar Dependências (Xvfb, FFmpeg, Chrome)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y xvfb ffmpeg google-chrome-stable
+
+      - name: Gravar Animação 4K a 60 FPS
+        run: |
+          # 1. Iniciar o ecrã virtual (Xvfb) em resolução 4K (3840x2160)
+          Xvfb :99 -screen 0 3840x2160x24 &
+          export DISPLAY=:99
+          
+          # Esperar que o ecrã virtual inicie
+          sleep 3
+          
+          # 2. Iniciar o Google Chrome em modo Kiosk apontando para a pasta privada
+          google-chrome --kiosk --window-size=3840,2160 --no-sandbox --autoplay-policy=no-user-gesture-required "file://$PWD/private_repo/scratch/SynapseTDA_Intro.html" &
+          
+          # Esperar que a página carregue e a animação comece
+          sleep 2
+          
+          # 3. Gravar o ecrã com o FFmpeg (Software Encoding - ultrafast)
+          ffmpeg -y -f x11grab -video_size 3840x2160 -framerate 60 -i :99 -c:v libx264 -preset ultrafast -crf 18 -t ${{ github.event.inputs.duration }} SynapseTDA_Intro_4K.mp4
+
+      - name: Upload do Vídeo para Download
+        uses: actions/upload-artifact@v4
+        with:
+          name: SynapseTDA_Intro_4K_Video
+          path: SynapseTDA_Intro_4K.mp4
