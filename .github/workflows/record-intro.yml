@@ -32,12 +32,11 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y ffmpeg
 
-      - name: Renderizar Vídeo Frame-a-Frame (Método À Prova de Bala)
+      - name: Renderizar Vídeo Frame-a-Frame (Correção de Argumentos)
         run: |
-          # 1. Instalar as bibliotecas locais em vez de globais
           npm install timecut puppeteer
           
-          # 2. Criar um mini-script Node na hora para forçar os argumentos à força
+          # Correção Mestra: O nome certo da variável em JavaScript é launchArguments
           cat << 'EOF' > render.js
           const timecut = require('timecut');
           timecut({
@@ -46,7 +45,7 @@ jobs:
             fps: 60,
             duration: parseInt(process.env.VIDEO_DURATION) || 60,
             output: 'SynapseTDA_Intro_4K.mp4',
-            puppeteerLaunchArgs: [
+            launchArguments: [
               '--no-sandbox', 
               '--disable-setuid-sandbox', 
               '--disable-dev-shm-usage', 
@@ -64,7 +63,6 @@ jobs:
           });
           EOF
           
-          # 3. Executar o nosso script
           echo "A invocar o motor de renderização cinemática..."
           export VIDEO_DURATION=${{ github.event.inputs.duration }}
           node render.js
