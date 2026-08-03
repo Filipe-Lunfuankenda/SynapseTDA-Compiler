@@ -32,21 +32,42 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y ffmpeg
 
-      - name: Renderizar Vídeo Frame-a-Frame (Qualidade Extrema 4K)
+      - name: Renderizar Vídeo Frame-a-Frame (Método À Prova de Bala)
         run: |
-          npm install -g timecut
+          # 1. Instalar as bibliotecas locais em vez de globais
+          npm install timecut puppeteer
           
-          echo "A renderizar 4K a 60FPS frame-a-frame..."
-          # Adicionámos --disable-dev-shm-usage para impedir o Chrome de esgotar a RAM e rebentar
-          # Adicionámos --disable-gpu para forçar a renderização a CPU limpa
-          timecut "file://$PWD/private_repo/scratch/SynapseTDA_Intro.html" \
-            --viewport=3840,2160 \
-            --fps=60 \
-            --duration=${{ github.event.inputs.duration }} \
-            --output=SynapseTDA_Intro_4K.mp4 \
-            --puppeteer-launch-args="--no-sandbox,--disable-setuid-sandbox,--disable-dev-shm-usage,--disable-gpu,--disable-translate,--disable-features=TranslateUI" \
-            --video-codec=libx264 \
-            --video-bitrate=50M
+          # 2. Criar um mini-script Node na hora para forçar os argumentos à força
+          cat << 'EOF' > render.js
+          const timecut = require('timecut');
+          timecut({
+            url: 'file://' + process.cwd() + '/private_repo/scratch/SynapseTDA_Intro.html',
+            viewport: { width: 3840, height: 2160 },
+            fps: 60,
+            duration: parseInt(process.env.VIDEO_DURATION) || 60,
+            output: 'SynapseTDA_Intro_4K.mp4',
+            puppeteerLaunchArgs: [
+              '--no-sandbox', 
+              '--disable-setuid-sandbox', 
+              '--disable-dev-shm-usage', 
+              '--disable-gpu',
+              '--disable-translate',
+              '--disable-features=TranslateUI'
+            ],
+            videoCodec: 'libx264',
+            videoBitrate: '50M'
+          }).then(() => {
+            console.log('✅ Vídeo Renderizado com Sucesso Absoluto!');
+          }).catch(err => { 
+            console.error('❌ Falha na renderização:', err); 
+            process.exit(1); 
+          });
+          EOF
+          
+          # 3. Executar o nosso script
+          echo "A invocar o motor de renderização cinemática..."
+          export VIDEO_DURATION=${{ github.event.inputs.duration }}
+          node render.js
 
       - name: Upload do Vídeo para Download
         uses: actions/upload-artifact@v4
