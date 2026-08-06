@@ -65,6 +65,8 @@ jobs:
             ${{ runner.os }}-julia-cache-
 
       - name: Construir Ambiente de Dependências
+        env:
+          JULIA_PKGEVAL: "1"
         run: julia --project=. -e 'using Pkg; Pkg.instantiate(); using CondaPkg; CondaPkg.resolve()'
         
       - name: Allocate Swap Space (Ubuntu OOM Fix)
@@ -78,6 +80,8 @@ jobs:
         run: julia scratch/patch_pythoncall.jl
 
       - name: Compilar App
+        env:
+          JULIA_PKGEVAL: "1"
         run: julia --project=. scratch/compile.jl
 
       - name: Package Windows
