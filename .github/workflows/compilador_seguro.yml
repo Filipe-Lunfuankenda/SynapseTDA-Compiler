@@ -96,6 +96,7 @@ jobs:
           mkdir SynapseTDA_App\output
           echo "Coloque todos os seus ficheiros de dados (EEG, ECG, etc) nesta pasta." > SynapseTDA_App\data\_COLOQUE_FICHEIROS_AQUI.txt
           echo "Os relatorios finais em HTML irao aparecer nesta pasta." > SynapseTDA_App\output\_RESULTADOS_AQUI.txt
+          Copy-Item -Recurse src\assets -Destination SynapseTDA_App\assets
           Copy-Item Project.toml -Destination SynapseTDA_App\_core_engine\share\julia\
           if (Test-Path CondaPkg.toml) { Copy-Item CondaPkg.toml -Destination SynapseTDA_App\_core_engine\share\julia\ }
           Copy-Item docs\INSTRUCOES_PT.txt -Destination SynapseTDA_App\
@@ -128,6 +129,7 @@ jobs:
           mkdir -p SynapseTDA_App/output
           echo "Coloque todos os seus ficheiros de dados (EEG, ECG, etc) nesta pasta." > SynapseTDA_App/data/_COLOQUE_FICHEIROS_AQUI.txt
           echo "Os relatorios finais em HTML irao aparecer nesta pasta." > SynapseTDA_App/output/_RESULTADOS_AQUI.txt
+          cp -r src/assets SynapseTDA_App/assets
           cp Project.toml SynapseTDA_App/_core_engine/share/julia/
           cp CondaPkg.toml SynapseTDA_App/_core_engine/share/julia/ || true
           cp Manifest.toml SynapseTDA_App/_core_engine/share/julia/ || true
