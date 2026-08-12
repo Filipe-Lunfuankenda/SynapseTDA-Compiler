@@ -103,11 +103,17 @@ jobs:
           Copy-Item docs\INSTRUCTIONS_EN.txt -Destination SynapseTDA_App\
           Copy-Item docs\MANUAL_PT_SynapseTDA.pdf -Destination SynapseTDA_App\
           Copy-Item docs\MANUAL_EN_SynapseTDA.pdf -Destination SynapseTDA_App\
+          Copy-Item Iniciar_Multithread.bat -Destination SynapseTDA_App\
+          Copy-Item Iniciar_Servidor_Lote.bat -Destination SynapseTDA_App\
           Copy-Item Manifest.toml -Destination SynapseTDA_App\_core_engine\share\julia\
           if (Test-Path .CondaPkg) { Copy-Item .CondaPkg -Recurse -Destination SynapseTDA_App\_core_engine\share\julia\ }
           echo '@echo off' > SynapseTDA_App\Executar_SynapseTDA.bat
           echo 'title SynapseTDA' >> SynapseTDA_App\Executar_SynapseTDA.bat
-          echo 'echo Iniciando Motor Topologico SynapseTDA...' >> SynapseTDA_App\Executar_SynapseTDA.bat
+          echo 'echo Iniciando Motor Topologico SynapseTDA (Acelerado)...' >> SynapseTDA_App\Executar_SynapseTDA.bat
+          echo 'for /f "tokens=2 delims==" %%A in (''wmic cpu get NumberOfLogicalProcessors /value ^| find "="'') do set CPU_CORES=%%A' >> SynapseTDA_App\Executar_SynapseTDA.bat
+          echo 'set /a TARGET_THREADS=%CPU_CORES% - 2' >> SynapseTDA_App\Executar_SynapseTDA.bat
+          echo 'if %TARGET_THREADS% LSS 1 set TARGET_THREADS=1' >> SynapseTDA_App\Executar_SynapseTDA.bat
+          echo 'set JULIA_NUM_THREADS=%TARGET_THREADS%' >> SynapseTDA_App\Executar_SynapseTDA.bat
           echo 'cd /d %~dp0' >> SynapseTDA_App\Executar_SynapseTDA.bat
           echo 'set JULIA_PYTHONCALL_EXE=%~dp0_core_engine\share\julia\.CondaPkg\.pixi\envs\default\python.exe' >> SynapseTDA_App\Executar_SynapseTDA.bat
           echo 'if not exist "%JULIA_PYTHONCALL_EXE%" set JULIA_PYTHONCALL_EXE=%~dp0_core_engine\share\julia\.CondaPkg\env\python.exe' >> SynapseTDA_App\Executar_SynapseTDA.bat
@@ -137,8 +143,17 @@ jobs:
           cp docs/INSTRUCTIONS_EN.txt SynapseTDA_App/
           cp docs/MANUAL_PT_SynapseTDA.pdf SynapseTDA_App/
           cp docs/MANUAL_EN_SynapseTDA.pdf SynapseTDA_App/
+          cp Iniciar_Multithread.sh SynapseTDA_App/
+          cp Iniciar_Servidor_Lote.sh SynapseTDA_App/
+          chmod +x SynapseTDA_App/Iniciar_Multithread.sh
+          chmod +x SynapseTDA_App/Iniciar_Servidor_Lote.sh
           cp -r .CondaPkg SynapseTDA_App/_core_engine/share/julia/ || true
           echo '#!/bin/bash' > SynapseTDA_App/Executar_SynapseTDA.sh
+          echo 'echo "Iniciando Motor Topologico SynapseTDA (Acelerado)..."' >> SynapseTDA_App/Executar_SynapseTDA.sh
+          echo 'if [ "$(uname)" == "Darwin" ]; then CPU_CORES=$(sysctl -n hw.logicalcpu); else CPU_CORES=$(nproc); fi' >> SynapseTDA_App/Executar_SynapseTDA.sh
+          echo 'TARGET_THREADS=$((CPU_CORES - 2))' >> SynapseTDA_App/Executar_SynapseTDA.sh
+          echo 'if [ "$TARGET_THREADS" -lt 1 ]; then TARGET_THREADS=1; fi' >> SynapseTDA_App/Executar_SynapseTDA.sh
+          echo 'export JULIA_NUM_THREADS=$TARGET_THREADS' >> SynapseTDA_App/Executar_SynapseTDA.sh
           echo 'cd "$(dirname "$0")"' >> SynapseTDA_App/Executar_SynapseTDA.sh
           echo 'PYTHON_PATH="$(pwd)/_core_engine/share/julia/.CondaPkg/.pixi/envs/default/bin/python"' >> SynapseTDA_App/Executar_SynapseTDA.sh
           echo 'if [ ! -f "$PYTHON_PATH" ]; then' >> SynapseTDA_App/Executar_SynapseTDA.sh
