@@ -103,7 +103,6 @@ jobs:
           Copy-Item docs\INSTRUCTIONS_EN.txt -Destination SynapseTDA_App\
           Copy-Item docs\MANUAL_PT_SynapseTDA.pdf -Destination SynapseTDA_App\
           Copy-Item docs\MANUAL_EN_SynapseTDA.pdf -Destination SynapseTDA_App\
-          Copy-Item Iniciar_Multithread.bat -Destination SynapseTDA_App\
           Copy-Item Iniciar_Servidor_Lote.bat -Destination SynapseTDA_App\
           Copy-Item Manifest.toml -Destination SynapseTDA_App\_core_engine\share\julia\
           if (Test-Path .CondaPkg) { Copy-Item .CondaPkg -Recurse -Destination SynapseTDA_App\_core_engine\share\julia\ }
@@ -143,9 +142,7 @@ jobs:
           cp docs/INSTRUCTIONS_EN.txt SynapseTDA_App/
           cp docs/MANUAL_PT_SynapseTDA.pdf SynapseTDA_App/
           cp docs/MANUAL_EN_SynapseTDA.pdf SynapseTDA_App/
-          cp Iniciar_Multithread.sh SynapseTDA_App/
           cp Iniciar_Servidor_Lote.sh SynapseTDA_App/
-          chmod +x SynapseTDA_App/Iniciar_Multithread.sh
           chmod +x SynapseTDA_App/Iniciar_Servidor_Lote.sh
           cp -r .CondaPkg SynapseTDA_App/_core_engine/share/julia/ || true
           echo '#!/bin/bash' > SynapseTDA_App/Executar_SynapseTDA.sh
