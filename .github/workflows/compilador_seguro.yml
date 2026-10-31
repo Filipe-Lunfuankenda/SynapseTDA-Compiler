@@ -109,8 +109,10 @@ jobs:
           echo '@echo off' > SynapseTDA_App\Executar_SynapseTDA.bat
           echo 'title SynapseTDA' >> SynapseTDA_App\Executar_SynapseTDA.bat
           echo 'echo Iniciando Motor Topologico SynapseTDA...' >> SynapseTDA_App\Executar_SynapseTDA.bat
-          echo 'for /f "tokens=2 delims==" %%A in (''wmic cpu get NumberOfLogicalProcessors /value ^| find "="'') do set CPU_CORES=%%A' >> SynapseTDA_App\Executar_SynapseTDA.bat
-          echo 'set /a TARGET_THREADS=%CPU_CORES% - 2' >> SynapseTDA_App\Executar_SynapseTDA.bat
+          echo 'set CPU_CORES=%NUMBER_OF_PROCESSORS%' >> SynapseTDA_App\Executar_SynapseTDA.bat
+          echo 'if "%CPU_CORES%"=="" for /f "usebackq" %%A in (`powershell -NoProfile -Command "[Environment]::ProcessorCount"`) do set CPU_CORES=%%A' >> SynapseTDA_App\Executar_SynapseTDA.bat
+          echo 'if "%CPU_CORES%"=="" set CPU_CORES=4' >> SynapseTDA_App\Executar_SynapseTDA.bat
+          echo 'set /a TARGET_THREADS=CPU_CORES - 2' >> SynapseTDA_App\Executar_SynapseTDA.bat
           echo 'if %TARGET_THREADS% LSS 1 set TARGET_THREADS=1' >> SynapseTDA_App\Executar_SynapseTDA.bat
           echo 'set JULIA_NUM_THREADS=%TARGET_THREADS%' >> SynapseTDA_App\Executar_SynapseTDA.bat
           echo 'cd /d %~dp0' >> SynapseTDA_App\Executar_SynapseTDA.bat
