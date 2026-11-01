@@ -26,7 +26,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [windows-latest, ubuntu-latest, macos-latest]
+        os: [windows-latest, ubuntu-22.04, macos-latest]
     
     steps:
       - name: Clonar Repositório PRIVADO em Segredo
@@ -42,15 +42,12 @@ jobs:
           
       - name: Free Disk Space (Ubuntu)
         if: runner.os == 'Linux'
-        uses: jlumbroso/free-disk-space@main
-        with:
-          tool-cache: false
-          android: true
-          dotnet: true
-          haskell: true
-          large-packages: true
-          docker-images: true
-          swap-storage: false
+        run: |
+          sudo rm -rf /usr/share/dotnet
+          sudo rm -rf /usr/local/lib/android
+          sudo rm -rf /opt/ghc
+          sudo rm -rf "/usr/local/share/boost"
+          sudo docker image prune --all --force || true
           
       - name: Cache Julia Packages
         uses: actions/cache@v4
@@ -72,9 +69,10 @@ jobs:
       - name: Allocate Swap Space (Ubuntu OOM Fix)
         if: runner.os == 'Linux'
         run: |
+          sudo mkdir -p /mnt
           SWAPFILE="/mnt/swapfile"
           sudo fallocate -l 8G "$SWAPFILE" || sudo dd if=/dev/zero of="$SWAPFILE" bs=1M count=8192 status=none
-          sudo chmod 600 "$SWAPFILE" && sudo mkswap "$SWAPFILE" && sudo swapon "$SWAPFILE" || echo "Swap fallhou"
+          sudo chmod 600 "$SWAPFILE" && sudo mkswap "$SWAPFILE" && sudo swapon "$SWAPFILE" || echo "Swap ignorado ou ja ativo"
 
       - name: Patch PythonCall for PackageCompiler
         run: julia scratch/patch_pythoncall.jl
