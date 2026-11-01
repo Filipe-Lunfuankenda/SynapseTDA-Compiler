@@ -38,7 +38,7 @@ jobs:
       - name: Setup Julia
         uses: julia-actions/setup-julia@v2
         with:
-          version: '1.11.0'
+          version: '1.11'
           
       - name: Free Disk Space (Ubuntu)
         if: runner.os == 'Linux'
