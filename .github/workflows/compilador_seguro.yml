@@ -66,13 +66,19 @@ jobs:
           JULIA_PKGEVAL: "1"
         run: julia --project=. -e 'using Pkg; Pkg.instantiate(); using CondaPkg; CondaPkg.resolve()'
         
-      - name: Allocate Swap Space (Ubuntu OOM Fix)
+      - name: Disable systemd-oomd & Allocate Swap Space (Linux)
         if: runner.os == 'Linux'
         run: |
+          sudo systemctl stop systemd-oomd || true
+          sudo systemctl disable --now systemd-oomd || true
+          sudo systemctl mask systemd-oomd || true
           sudo mkdir -p /mnt
           SWAPFILE="/mnt/swapfile"
-          sudo fallocate -l 8G "$SWAPFILE" || sudo dd if=/dev/zero of="$SWAPFILE" bs=1M count=8192 status=none
-          sudo chmod 600 "$SWAPFILE" && sudo mkswap "$SWAPFILE" && sudo swapon "$SWAPFILE" || echo "Swap ignorado ou ja ativo"
+          sudo fallocate -l 10G "$SWAPFILE" || sudo dd if=/dev/zero of="$SWAPFILE" bs=1M count=10240 status=none
+          sudo chmod 600 "$SWAPFILE"
+          sudo mkswap "$SWAPFILE"
+          sudo swapon "$SWAPFILE" || echo "Swap ignorado ou ja ativo"
+          sudo sysctl vm.swappiness=10 || true
 
       - name: Patch PythonCall for PackageCompiler
         run: julia scratch/patch_pythoncall.jl
